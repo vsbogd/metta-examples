@@ -41,11 +41,11 @@
 ; Non-recursive function defined using Y combinator
 ; Atom type is required type of the first argument otherwise
 ; implementation falls into infinite recursion
-(: id' (-> Atom (-> $t $t)))
-(= ((id' $f) $x) $x)
-(= (id $x) ((Y id') $x))
+(: id'' (-> Atom (-> $t $t)))
+(= ((id'' $f) $x) $x)
+(= (id' $x) ((Y id'') $x))
 
-!(assertEqual (id A) A)
+!(assertEqual (id' A) A)
 
 ; Recursive function defined using Y combinator
 (: fac (-> Atom (-> Int Int)))
@@ -66,12 +66,13 @@
 ; inside let.
 (: lambda (-> Variable Atom (-> Atom $t)))
 (= ((lambda $var $body) $val)
-    (let (quoted $var) (quoted $val) $body))
+  (chain (eval (sealed ($var) ($var $body))) $seal
+    (unify ($sv $sb) $seal (let (quote $sv) (quote $val) $sb) (Error (unify ($sv $sb) $seal ...) "Pair of atoms is expe error"))))
 
 ; Non-recursive function defined using lambda and Y combinator
-(= (id' $x) ((Y (lambda $f (lambda $x $x))) $x))
+(= (id''' $x) ((Y (lambda $f (lambda $x $x))) $x))
 
-!(assertEqual (id' A) A)
+!(assertEqual (id''' A) A)
 
 ; Recursive function defined using lambda and Y combinator
 (= (fact' $y)

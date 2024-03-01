@@ -281,7 +281,8 @@
 
 (: lambda1 (-> Variable Atom (-> $a $t)))
 (= ((lambda1 $var $body) $val)
-    (let (quote $var) (quote $val) $body) )
+  (chain (eval (sealed ($var) ($var $body))) $seal
+    (unify ($sv $sb) $seal (let (quote $sv) (quote $val) $sb) (Error (unify ($sv $sb) $seal) "Unexpected error"))))
 
 (= (square $x)
     (* $x $x))
@@ -573,14 +574,13 @@
 ; Scale tree but using map for definition
 (= (scale-tree-m $tree $factor)
     (map (lambda1 $sub-tree
-        (case $sub-tree
+        (sealed ($_ $x $xs) (case $sub-tree
             (((Cons $x $xs) (scale-tree-m $sub-tree $factor))
-            ($_ (* $sub-tree $factor)))))
+            ($_ (* $sub-tree $factor))))))
             $tree))
 !(assertEqual
     (scale-tree-m (list (1 (list (2 (list (3 4)) 5)) (list (6 7)))) 10)
     (tree (10 (20 (30 40) 50) (60 70))))
-
 
 ; Exercise 2.30.
 ;
@@ -611,9 +611,9 @@
 
 (= (square-tree-m $tree)
     (map (lambda1 $sub-tree
-        (case $sub-tree
+        (sealed ($_ $x $xs) (case $sub-tree
             (((Cons $x $xs) (square-tree-m $sub-tree))
-            ($_ (* $sub-tree $sub-tree)))))
+            ($_ (* $sub-tree $sub-tree))))))
             $tree))
 
 !(assertEqual
@@ -791,7 +791,8 @@
 
 (: lambda2 (-> Variable Variable Atom (-> $a $b $t)))
 (= ((lambda2 $var1 $var2 $body) $val1 $val2)
-    (let (quote ($var1 $var2)) (quote ($val1 $val2)) $body))
+  (chain (eval (sealed ($var1 $var2) ($var1 $var2 $body))) $seal
+    (unify ($sv1 $sv2 $sb) $seal (let (quote ($sv1 $sv2)) (quote ($val1 $val2)) $sb) (empty)) ))
 
 (= (acc-map $p $sequence)
   (accumulate (lambda2 $x $y (Cons ($p $x) $y)) Nil $sequence))
@@ -983,7 +984,10 @@
 
 (: lambda3 (-> Variable Variable Variable Atom (-> $a $b $c $t)))
 (= ((lambda3 $var1 $var2 $var3 $body) $val1 $val2 $val3)
-    (let (quote ($var1 $var2 $var3)) (quote ($val1 $val2 $val3)) $body))
+  (chain (eval (sealed ($var1 $var2 $var3) ($var1 $var2 $var3 $body))) $seal
+    (unify ($sv1 $sv2 $sv3 $sb) $seal
+       (let (quote ($sv1 $sv2 $sv3)) (quote ($val1 $val2 $val3)) $sb)
+       (Error (unify ($sv1 $sv2 $sv3 $sb) $seal) "Unexpected error"))))
 
 (= (fold-left $op $initial $sequence)
   (let $iter (lambda3 $result $rest $self
